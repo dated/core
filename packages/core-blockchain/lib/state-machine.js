@@ -62,7 +62,7 @@ blockchainMachine.actionMap = blockchain => {
 
     checkLastDownloadedBlockSynced () {
       let event = 'NOTSYNCED'
-      logger.debug(`Blocks in queue: ${blockchain.rebuildQueue.length()}`)
+      logger.debug(`Blocks in queues - rebuild: ${blockchain.rebuildQueue.length()} ; process: ${blockchain.processQueue.length()}`)
 
       if (blockchain.rebuildQueue.length() > 10000) {
         event = 'PAUSED'
@@ -199,8 +199,8 @@ blockchainMachine.actionMap = blockchain => {
         }
 
         state.rebuild = (slots.getTime() - block.data.timestamp > (constants.activeDelegates + 1) * constants.blocktime)
-        // no fast rebuild if in last week
-        state.fastRebuild = (slots.getTime() - block.data.timestamp > 3600 * 24 * 7) && !!container.resolveOptions('blockchain').fastRebuild
+        // no fast rebuild if in last day
+        state.fastRebuild = (slots.getTime() - block.data.timestamp > 3600 * 24) && !!container.resolveOptions('blockchain').fastRebuild
 
         if (process.env.NODE_ENV === 'test') {
           logger.verbose('TEST SUITE DETECTED! SYNCING WALLETS AND STARTING IMMEDIATELY. :bangbang:')
