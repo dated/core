@@ -27,6 +27,8 @@ module.exports = class SequelizeConnection extends ConnectionInterface {
    * @return {SequelizeConnection}
    */
   async make () {
+    logger.verbose(`Connecting to Sequelize database (${this.config.dialect})`)
+
     if (this.connection) {
       throw new Error('Sequelize connection already initialised')
     }
@@ -75,19 +77,22 @@ module.exports = class SequelizeConnection extends ConnectionInterface {
   }
 
   /**
-   * Disconnect from the database.
-   * @return {Boolean}
+   * Disconnects from the database and closes the cache.
+   * @return {Promise} The successfulness of closing the Sequelize connection
    */
   async disconnect () {
     try {
       await this.saveBlockCommit()
       await this.deleteBlockCommit()
+      this.cache.destroy()
     } catch (error) {
       logger.warn('Issue in commiting blocks, database might be corrupted')
       logger.warn(error.message)
     }
 
-    await this.connection.close()
+    logger.verbose(`Disconnecting from Sequelize database (${this.config.dialect})`)
+
+    return this.connection.close()
   }
 
   /**
@@ -320,7 +325,7 @@ module.exports = class SequelizeConnection extends ConnectionInterface {
         )
       }
     } else {
-      // NOTE: UPSERT is far from optimal. It can takes several seconds here 
+      // NOTE: UPSERT is far from optimal. It can takes several seconds here
       // if many accounts have to be updated at each round turn
       //
       // What can be done is to update accounts at each block in unsync manner
