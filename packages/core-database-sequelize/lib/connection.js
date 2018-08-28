@@ -369,6 +369,8 @@ module.exports = class SequelizeConnection extends ConnectionInterface {
       await transaction.rollback()
       throw error
     }
+    
+    global.gc();
   }
 
   /**
@@ -386,6 +388,8 @@ module.exports = class SequelizeConnection extends ConnectionInterface {
     if (block.transactions.length > 0) {
       await this.models.transaction.bulkCreate(block.transactions, { transaction: this.asyncTransaction })
     }
+    
+    global.gc();
   }
 
   /**
@@ -413,6 +417,8 @@ module.exports = class SequelizeConnection extends ConnectionInterface {
       this.asyncTransaction = null
       throw error
     }
+    
+    global.gc();
   }
 
   /**
