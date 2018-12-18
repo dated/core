@@ -424,6 +424,9 @@ export abstract class ConnectionInterface {
         await this.validateDelegate(block);
         this.walletManager.applyBlock(block);
 
+        const delegate = this.walletManager.findByPublicKey(block.generatorPublicKey);
+        this.walletManager.reindex(delegate);
+
         if (this.blocksInCurrentRound) {
             this.blocksInCurrentRound.push(block);
         }
