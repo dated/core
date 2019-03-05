@@ -14,13 +14,18 @@ const delegate = {
     username: "genesis_10",
     address: "AFyf2qVpX2JbpKcy29XbusedCpFDeYFX8Q",
     publicKey: "02f7acb179ddfddb2e220aa600921574646ac59fd3f1ae6255ada40b9a7fab75fd",
+    forgedFees: 50,
+    forgedRewards: 50,
+    forgedTotal: 100,
+    producedBlocks: 75,
+    missedBlocks: 25,
+    productivity: 75,
+    voteBalance: 100000,
 };
 
 const delegate2 = {
     username: "genesis_11",
-    address: "AZuvQC5WuVpPE9jwMCJcA28X5e7Ni32WY2",
-    publicKey: "0345ef2a1e4f64707044ba600efdc72aaad281c5a73195f930527c54d7cc891904",
-};
+}
 
 beforeAll(async () => {
     await setUp();
@@ -28,11 +33,11 @@ beforeAll(async () => {
 
     const wm = app.resolvePlugin("database").walletManager;
     const wallet = wm.findByUsername("genesis_10");
-    wallet.forgedFees = new Bignum(50);
-    wallet.forgedRewards = new Bignum(50);
-    wallet.producedBlocks = 100;
+    wallet.forgedFees = new Bignum(delegate.forgedFees);
+    wallet.forgedRewards = new Bignum(delegate.forgedRewards);
+    wallet.producedBlocks = 75;
     wallet.missedBlocks = 25;
-    wallet.voteBalance = new Bignum(100 * 1e8);
+    wallet.voteBalance = new Bignum(delegate.voteBalance);
     wm.reindex(wallet);
 });
 
@@ -140,7 +145,8 @@ describe("API 2.0 - Delegates", () => {
                     expect(response).toBeSuccessfulResponse();
                     expect(response.data.data).toBeObject();
 
-                    utils.expectDelegate(response.data.data, delegate);
+                    utils.expectDelegate(response.data.data);
+                    expect(response.data.data.username).toEqual(delegate.username);
                 });
             },
         );
@@ -153,7 +159,8 @@ describe("API 2.0 - Delegates", () => {
                     expect(response).toBeSuccessfulResponse();
                     expect(response.data.data).toBeObject();
 
-                    utils.expectDelegate(response.data.data, delegate);
+                    utils.expectDelegate(response.data.data);
+                    expect(response.data.data.address).toEqual(delegate.address);
                 });
             },
         );
@@ -166,72 +173,374 @@ describe("API 2.0 - Delegates", () => {
                     expect(response).toBeSuccessfulResponse();
                     expect(response.data.data).toBeObject();
 
-                    utils.expectDelegate(response.data.data, delegate);
+                    utils.expectDelegate(response.data.data);
+                    expect(response.data.data.publicKey).toEqual(delegate.publicKey);
                 });
             },
         );
     });
 
     describe("POST /delegates/search", () => {
-        const expectSearch = async (response, expected = null, count = 1) => {
-            expect(response).toBeSuccessfulResponse();
-            expect(response).toBeObject();
-
-            expect(response.data.data).toBeArray();
-            expect(response.data.data).toHaveLength(count);
-
-            if (count > 0) {
-                expect(response.data.data).not.toBeEmpty();
-
-                for (const delegate of response.data.data) {
-                    utils.expectDelegate(delegate, expected);
-                }
-            }
-        };
-
         describe.each([["API-Version", "request"], ["Accept", "requestWithAcceptHeader"]])(
             "using the %s header",
             (header, request) => {
                 it("should POST a search for delegates with an address that matches the given string", async () => {
                     const response = await utils[request]("POST", "delegates/search", {
-                        address: delegate.address,
+                        address: delegate.address
                     });
 
-                    expectSearch(response, delegate, 1);
+                    expect(response).toBeSuccessfulResponse();
+                    expect(response.data.data).toBeArray();
+                    expect(response.data.data).toHaveLength(1);
+
+                    for (const elem of response.data.data) {
+                        utils.expectDelegate(elem);
+                        expect(elem.address).toBe(delegate.address);
+                    }
                 });
 
                 it("should POST a search for delegates with a public key that matches the given string", async () => {
                     const response = await utils[request]("POST", "delegates/search", {
-                        publicKey: delegate.publicKey,
+                        publicKey: delegate.publicKey
                     });
 
-                    expectSearch(response, delegate, 1);
+                    expect(response).toBeSuccessfulResponse();
+                    expect(response.data.data).toBeArray();
+                    expect(response.data.data).toHaveLength(1);
+
+                    for (const elem of response.data.data) {
+                        utils.expectDelegate(elem);
+                        expect(elem.publicKey).toBe(delegate.publicKey);
+                    }
                 });
 
                 it("should POST a search for delegates with a username that matches the given string", async () => {
                     const response = await utils[request]("POST", "delegates/search", {
-                        username: delegate.username,
+                        username: delegate.username
                     });
 
-                    expectSearch(response, delegate, 1);
+                    expect(response).toBeSuccessfulResponse();
+                    expect(response.data.data).toBeArray();
+                    expect(response.data.data).toHaveLength(1);
+
+                    for (const elem of response.data.data) {
+                        utils.expectDelegate(elem);
+                        expect(elem.username).toEqual(delegate.username);
+                    }
                 });
 
                 it("should POST a search for delegates with any of the specified usernames", async () => {
+                    const usernames = [delegate.username, delegate2.username]
+
                     const response = await utils[request]("POST", "delegates/search", {
-                        usernames: [delegate.username, delegate2.username],
+                        usernames
                     });
 
-                    expectSearch(response, null, 2);
+                    expect(response).toBeSuccessfulResponse();
+                    expect(response.data.data).toBeArray();
+                    expect(response.data.data).toHaveLength(2);
+
+                    for (const elem of response.data.data) {
+                        utils.expectDelegate(elem);
+                        expect(usernames.includes(elem.username)).toBe(true);
+                    }
                 });
 
-                // APPROVAL
-                // FORGEDFEES
-                // FORGEDREWARDS
-                // FORGEDTOTAL
-                // MISSEDBLOCKS
-                // PRODUCEDBLOCKS
-                // PRODUCTIVITY
-                // VOTEBALANCE
+                it("should POST a search for delegates with the exact specified approval", async () => {
+                    const response = await utils[request]("POST", "delegates/search", {
+                        approval: {
+                            from: 0,
+                            to: 0,
+                        },
+                    });
+
+                    expect(response).toBeSuccessfulResponse();
+                    expect(response.data.data).toBeArray();
+                    expect(response.data.data).toHaveLength(2);
+
+                    for (const elem of response.data.data) {
+                        utils.expectDelegate(elem);
+                        expect(elem.production.approval).toEqual(0);
+                    }
+                });
+
+                it("should POST a search for delegates with the specified approval range", async () => {
+                    const response = await utils[request]("POST", "delegates/search", {
+                        approval: {
+                            from: 1,
+                            to: 100,
+                        },
+                    });
+
+                    expect(response).toBeSuccessfulResponse();
+                    expect(response.data.data).toBeArray();
+                    expect(response.data.data).toHaveLength(49);
+
+                    for (const elem of response.data.data) {
+                        utils.expectDelegate(elem);
+                        expect(elem.production.approval).toBeGreaterThanOrEqual(1);
+                        expect(elem.production.approval).toBeLessThanOrEqual(100)
+                    }
+                });
+
+                it("should POST a search for delegates with the exact specified forged fees", async () => {
+                    const response = await utils[request]("POST", "delegates/search", {
+                        forgedFees: {
+                            from: delegate.forgedFees,
+                            to: delegate.forgedFees,
+                        },
+                    });
+
+                    expect(response).toBeSuccessfulResponse();
+                    expect(response.data.data).toBeArray();
+                    expect(response.data.data).toHaveLength(1);
+
+                    for (const elem of response.data.data) {
+                        utils.expectDelegate(elem);
+                        expect(elem.forged.fees).toEqual(delegate.forgedFees)
+                    }
+                });
+
+                it("should POST a search for delegates with the specified forged fees range", async () => {
+                    const response = await utils[request]("POST", "delegates/search", {
+                        forgedFees: {
+                            from: 0,
+                            to: delegate.forgedFees,
+                        },
+                    });
+
+                    expect(response).toBeSuccessfulResponse();
+                    expect(response.data.data).toBeArray();
+                    expect(response.data.data).toHaveLength(51);
+
+                    for (const elem of response.data.data) {
+                        utils.expectDelegate(elem);
+                        expect(elem.forged.fees).toBeGreaterThanOrEqual(0);
+                        expect(elem.forged.fees).toBeLessThanOrEqual(delegate.forgedFees)
+                    }
+                });
+
+                it("should POST a search for delegates with the exact specified forged rewards", async () => {
+                    const response = await utils[request]("POST", "delegates/search", {
+                        forgedRewards: {
+                            from: delegate.forgedRewards,
+                            to: delegate.forgedRewards,
+                        },
+                    });
+
+                    expect(response).toBeSuccessfulResponse();
+                    expect(response.data.data).toBeArray();
+                    expect(response.data.data).toHaveLength(1);
+
+                    for (const elem of response.data.data) {
+                        utils.expectDelegate(elem);
+                        expect(elem.forged.rewards).toEqual(delegate.forgedRewards)
+                    }
+                });
+
+                it("should POST a search for delegates with the specified forged rewards range", async () => {
+                    const response = await utils[request]("POST", "delegates/search", {
+                        forgedRewards: {
+                            from: 0,
+                            to: delegate.forgedRewards,
+                        },
+                    });
+
+                    expect(response).toBeSuccessfulResponse();
+                    expect(response.data.data).toBeArray();
+                    expect(response.data.data).toHaveLength(51);
+
+                    for (const elem of response.data.data) {
+                        utils.expectDelegate(elem);
+                        expect(elem.forged.rewards).toBeGreaterThanOrEqual(0);
+                        expect(elem.forged.rewards).toBeLessThanOrEqual(delegate.forgedRewards)
+                    }
+                });
+
+                it("should POST a search for delegates with the exact specified forged total", async () => {
+                    const response = await utils[request]("POST", "delegates/search", {
+                        forgedTotal: {
+                            from: delegate.forgedTotal,
+                            to: delegate.forgedTotal,
+                        },
+                    });
+
+                    expect(response).toBeSuccessfulResponse();
+                    expect(response.data.data).toBeArray();
+                    expect(response.data.data).toHaveLength(1);
+
+                    for (const elem of response.data.data) {
+                        utils.expectDelegate(elem);
+                        expect(elem.forged.total).toEqual(delegate.forgedTotal)
+                    }
+                });
+
+                it("should POST a search for delegates with the specified forged total range", async () => {
+                    const response = await utils[request]("POST", "delegates/search", {
+                        forgedRewards: {
+                            from: 0,
+                            to: delegate.forgedTotal,
+                        },
+                    });
+
+                    expect(response).toBeSuccessfulResponse();
+                    expect(response.data.data).toBeArray();
+                    expect(response.data.data).toHaveLength(51);
+
+                    for (const elem of response.data.data) {
+                        utils.expectDelegate(elem);
+                        expect(elem.forged.total).toBeGreaterThanOrEqual(0);
+                        expect(elem.forged.total).toBeLessThanOrEqual(delegate.forgedTotal)
+                    }
+                });
+
+                it("should POST a search for delegates with the exact specified produced blocks", async () => {
+                    const response = await utils[request]("POST", "delegates/search", {
+                        producedBlocks: {
+                            from: delegate.producedBlocks,
+                            to: delegate.producedBlocks,
+                        },
+                    });
+
+                    expect(response).toBeSuccessfulResponse();
+                    expect(response.data.data).toBeArray();
+                    expect(response.data.data).toHaveLength(1);
+
+                    for (const elem of response.data.data) {
+                        utils.expectDelegate(elem);
+                        expect(elem.blocks.produced).toEqual(delegate.producedBlocks)
+                    }
+                });
+
+                it("should POST a search for delegates with the specified produced blocks range", async () => {
+                    const response = await utils[request]("POST", "delegates/search", {
+                        producedBlocks: {
+                            from: 0,
+                            to: delegate.producedBlocks,
+                        },
+                    });
+
+                    expect(response).toBeSuccessfulResponse();
+                    expect(response.data.data).toBeArray();
+                    expect(response.data.data).toHaveLength(51);
+
+                    for (const elem of response.data.data) {
+                        utils.expectDelegate(elem);
+                        expect(elem.blocks.produced).toBeGreaterThanOrEqual(0);
+                        expect(elem.blocks.produced).toBeLessThanOrEqual(delegate.producedBlocks)
+                    }
+                });
+
+                it("should POST a search for delegates with the exact specified missed blocks", async () => {
+                    const response = await utils[request]("POST", "delegates/search", {
+                        missedBlocks: {
+                            from: delegate.missedBlocks,
+                            to: delegate.missedBlocks,
+                        },
+                    });
+
+                    expect(response).toBeSuccessfulResponse();
+                    expect(response.data.data).toBeArray();
+                    expect(response.data.data).toHaveLength(1);
+
+                    for (const elem of response.data.data) {
+                        utils.expectDelegate(elem);
+                        expect(elem.blocks.missed).toEqual(delegate.missedBlocks)
+                    }
+                });
+
+                it("should POST a search for delegates with the specified missed blocks range", async () => {
+                    const response = await utils[request]("POST", "delegates/search", {
+                        missedBlocks: {
+                            from: 0,
+                            to: delegate.missedBlocks,
+                        },
+                    });
+
+                    expect(response).toBeSuccessfulResponse();
+                    expect(response.data.data).toBeArray();
+                    expect(response.data.data).toHaveLength(51);
+
+                    for (const elem of response.data.data) {
+                        utils.expectDelegate(elem);
+                        expect(elem.blocks.missed).toBeGreaterThanOrEqual(0);
+                        expect(elem.blocks.missed).toBeLessThanOrEqual(delegate.missedBlocks)
+                    }
+                });
+
+                it("should POST a search for delegates with the exact specified productivity", async () => {
+                    const response = await utils[request]("POST", "delegates/search", {
+                        productivity: {
+                            from: delegate.productivity,
+                            to: delegate.productivity,
+                        },
+                    });
+
+                    expect(response).toBeSuccessfulResponse();
+                    expect(response.data.data).toBeArray();
+                    expect(response.data.data).toHaveLength(1);
+
+                    for (const elem of response.data.data) {
+                        utils.expectDelegate(elem);
+                        expect(elem.production.productivity).toEqual(delegate.productivity)
+                    }
+                });
+
+                it("should POST a search for delegates with the specified productivity range", async () => {
+                    const response = await utils[request]("POST", "delegates/search", {
+                        productivity: {
+                            from: 0,
+                            to: delegate.productivity,
+                        },
+                    });
+
+                    expect(response).toBeSuccessfulResponse();
+                    expect(response.data.data).toBeArray();
+                    expect(response.data.data).toHaveLength(51);
+
+                    for (const elem of response.data.data) {
+                        utils.expectDelegate(elem);
+                        expect(elem.production.productivity).toBeGreaterThanOrEqual(0);
+                        expect(elem.production.productivity).toBeLessThanOrEqual(delegate.productivity)
+                    }
+                });
+
+                it("should POST a search for delegates with the exact specified votes", async () => {
+                    const response = await utils[request]("POST", "delegates/search", {
+                        voteBalance: {
+                            from: delegate.voteBalance,
+                            to: delegate.voteBalance,
+                        },
+                    });
+
+                    expect(response).toBeSuccessfulResponse();
+                    expect(response.data.data).toBeArray();
+                    expect(response.data.data).toHaveLength(1);
+
+                    for (const elem of response.data.data) {
+                        utils.expectDelegate(elem);
+                        expect(elem.votes).toEqual(delegate.voteBalance)
+                    }
+                });
+
+                it("should POST a search for delegates with the specified votes range", async () => {
+                    const response = await utils[request]("POST", "delegates/search", {
+                        voteBalance: {
+                            from: 0,
+                            to: delegate.voteBalance,
+                        },
+                    });
+
+                    expect(response).toBeSuccessfulResponse();
+                    expect(response.data.data).toBeArray();
+                    expect(response.data.data).toHaveLength(51);
+
+                    for (const elem of response.data.data) {
+                        utils.expectDelegate(elem);
+                        expect(elem.votes).toBeGreaterThanOrEqual(0);
+                        expect(elem.votes).toBeLessThanOrEqual(delegate.voteBalance)
+                    }
+                });
             },
         );
     });

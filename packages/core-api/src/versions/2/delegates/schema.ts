@@ -107,7 +107,7 @@ export const search: object = {
         missedBlocks: schemaIntegerBetween,
         producedBlocks: schemaIntegerBetween,
         productivity: schemaPercentage,
-        votes: schemaIntegerBetween,
+        voteBalance: schemaIntegerBetween,
     },
 };
 
