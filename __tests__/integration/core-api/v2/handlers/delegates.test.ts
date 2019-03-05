@@ -173,6 +173,22 @@ describe("API 2.0 - Delegates", () => {
     });
 
     describe("POST /delegates/search", () => {
+        const expectSearch = async (response, expected = null, count = 1) => {
+            expect(response).toBeSuccessfulResponse();
+            expect(response).toBeObject();
+
+            expect(response.data.data).toBeArray();
+            expect(response.data.data).toHaveLength(count);
+
+            if (count > 0) {
+                expect(response.data.data).not.toBeEmpty();
+
+                for (const delegate of response.data.data) {
+                    utils.expectDelegate(delegate, expected);
+                }
+            }
+        };
+
         describe.each([["API-Version", "request"], ["Accept", "requestWithAcceptHeader"]])(
             "using the %s header",
             (header, request) => {
@@ -180,50 +196,32 @@ describe("API 2.0 - Delegates", () => {
                     const response = await utils[request]("POST", "delegates/search", {
                         address: delegate.address,
                     });
-                    expect(response).toBeSuccessfulResponse();
-                    expect(response.data.data).toBeArray();
 
-                    expect(response.data.data).toHaveLength(1);
-
-                    utils.expectDelegate(response.data.data[0], delegate);
+                    expectSearch(response, delegate, 1);
                 });
 
                 it("should POST a search for delegates with a public key that matches the given string", async () => {
                     const response = await utils[request]("POST", "delegates/search", {
                         publicKey: delegate.publicKey,
                     });
-                    expect(response).toBeSuccessfulResponse();
-                    expect(response.data.data).toBeArray();
 
-                    expect(response.data.data).toHaveLength(1);
-
-                    utils.expectDelegate(response.data.data[0], delegate);
+                    expectSearch(response, delegate, 1);
                 });
 
                 it("should POST a search for delegates with a username that matches the given string", async () => {
                     const response = await utils[request]("POST", "delegates/search", {
                         username: delegate.username,
                     });
-                    expect(response).toBeSuccessfulResponse();
-                    expect(response.data.data).toBeArray();
 
-                    expect(response.data.data).toHaveLength(1);
-
-                    utils.expectDelegate(response.data.data[0], delegate);
+                    expectSearch(response, delegate, 1);
                 });
 
                 it("should POST a search for delegates with any of the specified usernames", async () => {
                     const response = await utils[request]("POST", "delegates/search", {
                         usernames: [delegate.username, delegate2.username],
                     });
-                    expect(response).toBeSuccessfulResponse();
-                    expect(response.data.data).toBeArray();
 
-                    expect(response.data.data).toHaveLength(2);
-
-                    for (const delegate of response.data.data) {
-                        utils.expectDelegate(delegate);
-                    }
+                    expectSearch(response, null, 2);
                 });
 
                 // APPROVAL
