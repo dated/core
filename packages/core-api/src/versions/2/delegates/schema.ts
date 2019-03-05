@@ -88,6 +88,12 @@ export const search: object = {
         },
     },
     payload: {
+        address: Joi.string()
+            .alphanum()
+            .length(34),
+        publicKey: Joi.string()
+            .hex()
+            .length(66),
         username: schemaUsername,
         usernames: Joi.array()
             .unique()

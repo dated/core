@@ -11,20 +11,29 @@ import { app } from "@arkecosystem/core-container";
 import { Database } from "@arkecosystem/core-interfaces";
 
 const delegate = {
-    username: "genesis_9",
-    address: "AG8kwwk4TsYfA2HdwaWBVAJQBj6VhdcpMo",
-    publicKey: "0377f81a18d25d77b100cb17e829a72259f08334d064f6c887298917a04df8f647",
-};
-
-const delegate2 = {
     username: "genesis_10",
     address: "AFyf2qVpX2JbpKcy29XbusedCpFDeYFX8Q",
     publicKey: "02f7acb179ddfddb2e220aa600921574646ac59fd3f1ae6255ada40b9a7fab75fd",
 };
 
+const delegate2 = {
+    username: "genesis_11",
+    address: "AZuvQC5WuVpPE9jwMCJcA28X5e7Ni32WY2",
+    publicKey: "0345ef2a1e4f64707044ba600efdc72aaad281c5a73195f930527c54d7cc891904",
+};
+
 beforeAll(async () => {
     await setUp();
     await calculateRanks();
+
+    const wm = app.resolvePlugin("database").walletManager;
+    const wallet = wm.findByUsername("genesis_10");
+    wallet.forgedFees = new Bignum(50);
+    wallet.forgedRewards = new Bignum(50);
+    wallet.producedBlocks = 100;
+    wallet.missedBlocks = 25;
+    wallet.voteBalance = new Bignum(100 * 1e8);
+    wm.reindex(wallet);
 });
 
 afterAll(async () => {
@@ -167,6 +176,30 @@ describe("API 2.0 - Delegates", () => {
         describe.each([["API-Version", "request"], ["Accept", "requestWithAcceptHeader"]])(
             "using the %s header",
             (header, request) => {
+                it("should POST a search for delegates with an address that matches the given string", async () => {
+                    const response = await utils[request]("POST", "delegates/search", {
+                        address: delegate.address,
+                    });
+                    expect(response).toBeSuccessfulResponse();
+                    expect(response.data.data).toBeArray();
+
+                    expect(response.data.data).toHaveLength(1);
+
+                    utils.expectDelegate(response.data.data[0], delegate);
+                });
+
+                it("should POST a search for delegates with a public key that matches the given string", async () => {
+                    const response = await utils[request]("POST", "delegates/search", {
+                        publicKey: delegate.publicKey,
+                    });
+                    expect(response).toBeSuccessfulResponse();
+                    expect(response.data.data).toBeArray();
+
+                    expect(response.data.data).toHaveLength(1);
+
+                    utils.expectDelegate(response.data.data[0], delegate);
+                });
+
                 it("should POST a search for delegates with a username that matches the given string", async () => {
                     const response = await utils[request]("POST", "delegates/search", {
                         username: delegate.username,
@@ -192,6 +225,15 @@ describe("API 2.0 - Delegates", () => {
                         utils.expectDelegate(delegate);
                     }
                 });
+
+                // APPROVAL
+                // FORGEDFEES
+                // FORGEDREWARDS
+                // FORGEDTOTAL
+                // MISSEDBLOCKS
+                // PRODUCEDBLOCKS
+                // PRODUCTIVITY
+                // VOTEBALANCE
             },
         );
     });
