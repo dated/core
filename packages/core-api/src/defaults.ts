@@ -61,6 +61,7 @@ export const defaults = {
             "/api/wallets/search",
         ],
     },
+    feesDaysLimit: process.env.CORE_API_FEES_DAYS_LIMIT || 30,
     whitelist: ["127.0.0.1", "::ffff:127.0.0.1"],
     plugins: [],
 };

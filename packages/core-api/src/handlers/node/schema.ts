@@ -1,3 +1,4 @@
+import { app } from "@arkecosystem/core-container";
 import joi from "@hapi/joi";
 
 export const fees: object = {
@@ -6,7 +7,7 @@ export const fees: object = {
             .number()
             .integer()
             .min(1)
-            .max(30)
+            .max(app.resolveOptions("api").feesDaysLimit)
             .default(7),
     },
 };
