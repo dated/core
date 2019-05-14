@@ -38,7 +38,7 @@ export const defaults = {
     },
     // @see https://github.com/fknop/hapi-pagination
     pagination: {
-        limit: 100,
+        limit: process.env.CORE_API_PAGINATION_LIMIT || 100,
         include: [
             "/api/blocks",
             "/api/blocks/{id}/transactions",
