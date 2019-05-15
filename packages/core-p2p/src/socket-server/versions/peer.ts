@@ -2,6 +2,7 @@ import { app } from "@arkecosystem/core-container";
 import { Blockchain, Database, Logger, P2P, TransactionPool } from "@arkecosystem/core-interfaces";
 import { Crypto, Interfaces } from "@arkecosystem/crypto";
 import pluralize from "pluralize";
+import { process } from "ipaddr.js";
 import { isBlockChained } from "../../../../core-utils/dist";
 import { MissingCommonBlockError } from "../../errors";
 import { isWhitelisted } from "../../utils";
@@ -112,9 +113,11 @@ export const getBlocks = async ({ req }): Promise<Interfaces.IBlockData[]> => {
     }
 
     app.resolvePlugin<Logger.ILogger>("logger").info(
-        `${req.headers.remoteAddress} has downloaded ${pluralize("block", blocks.length, true)} from height ${(!isNaN(
-            reqBlockHeight,
-        )
+        `${process(req.headers.remoteAddress).toString()} has downloaded ${pluralize(
+            "block",
+            blocks.length,
+            true,
+        )} from height ${(!isNaN(reqBlockHeight)
             ? reqBlockHeight
             : blocks[0].height
         ).toLocaleString()}`,
