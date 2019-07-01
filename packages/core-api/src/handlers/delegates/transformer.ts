@@ -8,6 +8,7 @@ export const transformDelegate = delegate => {
         publicKey: delegate.publicKey,
         votes: Utils.BigNumber.make(delegate.voteBalance).toFixed(),
         rank: delegate.rate,
+        previousRank: delegateCalculator.calculatePreviousRank(delegate),
         blocks: {
             produced: delegate.producedBlocks,
         },
