@@ -53,7 +53,7 @@ export class WalletManager implements State.IWalletManager {
 
         this.registerIndex(State.WalletIndexes.Businesses, (index: State.IWalletIndex, wallet: State.IWallet) => {
             if (wallet.isBusiness()) {
-                index.set(wallet.getAttribute("business.name"), wallet);
+                index.set(wallet.getAttribute("business.businessAsset.name"), wallet);
             }
         })
     }
