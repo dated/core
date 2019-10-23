@@ -61,7 +61,7 @@ export class BusinessRegistrationTransactionHandler extends Handlers.Transaction
         const { data }: Interfaces.ITransaction = transaction;
         const { name }: { name: string } = data.asset.businessAsset;
 
-        if (wallet.findByBusiness(name)) {
+        if (databaseWalletManager.findByBusiness(name)) {
             throw new BusinessNameAlreadyRegisteredError(name);
         }
 
