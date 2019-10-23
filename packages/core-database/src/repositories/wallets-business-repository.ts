@@ -229,8 +229,7 @@ export class WalletsBusinessRepository implements Database.IWalletsBusinessRepos
                 const business: any = wallet.getAttribute("business");
                 acc.push({
                     id: business.businessId,
-                    name: business.businessAsset.name,
-                    website: business.businessAsset.website,
+                    ...business.businessAsset,
                 });
                 return acc;
             }, []);
