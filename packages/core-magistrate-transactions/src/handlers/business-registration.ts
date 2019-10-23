@@ -2,7 +2,7 @@ import { Database, EventEmitter, State, TransactionPool } from "@arkecosystem/co
 import { Transactions as MagistrateTransactions } from "@arkecosystem/core-magistrate-crypto";
 import { Handlers, TransactionReader } from "@arkecosystem/core-transactions";
 import { Interfaces, Managers, Transactions, Utils } from "@arkecosystem/crypto";
-import { BusinessAlreadyRegisteredError } from "../errors";
+import { BusinessAlreadyRegisteredError, BusinessNameAlreadyRegisteredError } from "../errors";
 import { MagistrateApplicationEvents } from "../events";
 import { IBusinessWalletAttributes } from "../interfaces";
 import { MagistrateIndex } from "../wallet-manager";
@@ -54,8 +54,14 @@ export class BusinessRegistrationTransactionHandler extends Handlers.Transaction
         wallet: State.IWallet,
         databaseWalletManager: State.IWalletManager,
     ): Promise<void> {
-        if (wallet.hasAttribute("business")) {
+        if (wallet.isBusiness()) {
             throw new BusinessAlreadyRegisteredError();
+        }
+
+        const { name }: { name: string } = transaction.data.asset.businessAsset;
+
+        if (databaseWalletManager.findByBusiness(name)) {
+            throw new BusinessNameAlreadyRegisteredError(name);
         }
 
         return super.throwIfCannotBeApplied(transaction, wallet, databaseWalletManager);

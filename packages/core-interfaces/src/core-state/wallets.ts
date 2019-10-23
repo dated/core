@@ -10,6 +10,7 @@ export enum WalletIndexes {
     Usernames = "usernames",
     Resignations = "resignations",
     Locks = "locks",
+    Businesses = "businesses",
 }
 
 export interface IWallet {
@@ -29,6 +30,7 @@ export interface IWallet {
     setAttribute<T = any>(key: string, value: T): void;
     forgetAttribute(key: string): void;
 
+    isBusiness(): boolean;
     isDelegate(): boolean;
     hasVoted(): boolean;
     hasSecondSignature(): boolean;
@@ -100,6 +102,8 @@ export interface IWalletManager {
     hasByIndex(indexName: string, key: string): boolean;
 
     getIndexNames(): string[];
+
+    findByBusiness(business: string): IWallet;
 
     findByPublicKey(publicKey: string): IWallet;
 
