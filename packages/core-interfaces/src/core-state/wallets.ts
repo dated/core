@@ -103,6 +103,8 @@ export interface IWalletManager {
 
     getIndexNames(): string[];
 
+    findByBusiness(business: string): IWallet;
+
     findByPublicKey(publicKey: string): IWallet;
 
     findByUsername(username: string): IWallet;
