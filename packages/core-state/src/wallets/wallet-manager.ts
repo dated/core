@@ -50,6 +50,12 @@ export class WalletManager implements State.IWalletManager {
                 }
             }
         });
+
+        this.registerIndex(State.WalletIndexes.Businesses, (index: State.IWalletIndex, wallet: State.IWallet) => {
+            if (wallet.isBusiness()) {
+                index.set(wallet.getAttribute("business.name"), wallet);
+            }
+        })
     }
 
     public registerIndex(name: string, indexer: State.WalletIndexer): void {
@@ -122,6 +128,10 @@ export class WalletManager implements State.IWalletManager {
         }
 
         return index.get(publicKey);
+    }
+
+    public findByBusiness(business: string): State.IWallet {
+        return this.findByIndex(State.WalletIndexes.Businesses, business);
     }
 
     public findByUsername(username: string): State.IWallet {
