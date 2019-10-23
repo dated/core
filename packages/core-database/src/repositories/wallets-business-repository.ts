@@ -10,7 +10,7 @@ interface ISearchContext<T = any> {
 }
 
 interface IUnwrappedHtlcLock {
-    lockId: string;
+    id: string;
     senderPublicKey: string;
     amount: Utils.BigNumber;
     recipientId: string;
@@ -179,7 +179,7 @@ export class WalletsBusinessRepository implements Database.IWalletsBusinessRepos
 
     private searchLocks(params: Database.IParameters = {}): ISearchContext<IUnwrappedHtlcLock> {
         const query: Record<string, string[]> = {
-            exact: ["senderPublicKey", "lockId", "recipientId", "secretHash", "expirationType", "vendorField"],
+            exact: ["senderPublicKey", "id", "recipientId", "secretHash", "expirationType", "vendorField"],
             between: ["expirationValue", "amount", "timestamp"],
         };
 
@@ -195,7 +195,7 @@ export class WalletsBusinessRepository implements Database.IWalletsBusinessRepos
                 if (locks && locks[lockId]) {
                     const lock: Interfaces.IHtlcLock = locks[lockId];
                     acc.push({
-                        lockId,
+                        id: lockId,
                         amount: lock.amount,
                         secretHash: lock.secretHash,
                         senderPublicKey: wallet.publicKey,

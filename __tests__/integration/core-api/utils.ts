@@ -134,7 +134,7 @@ class Helpers {
 
     public expectLock(lock) {
         expect(lock).toBeObject();
-        expect(lock).toHaveProperty("lockId");
+        expect(lock).toHaveProperty("id");
         expect(lock).toHaveProperty("senderPublicKey");
         expect(lock).toHaveProperty("recipientId");
         expect(lock).toHaveProperty("amount");

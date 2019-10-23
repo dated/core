@@ -127,7 +127,7 @@ describe("API 2.0 - Locks", () => {
 
             const lock = response.data.data;
             utils.expectLock(lock);
-            expect(lock.lockId).toBe(lockIds[0]);
+            expect(lock.id).toBe(lockIds[0]);
         });
 
         describe("when requesting an unknown lock", () => {
@@ -168,7 +168,7 @@ describe("API 2.0 - Locks", () => {
 
         it("should POST a search for locks with the exact specified lockId", async () => {
             const response = await utils.request("POST", "locks/search", {
-                lockId: lockIds[0],
+                id: lockIds[0],
             });
 
             expect(response).toBeSuccessfulResponse();
@@ -178,7 +178,7 @@ describe("API 2.0 - Locks", () => {
 
             const lock = response.data.data[0];
             utils.expectLock(lock);
-            expect(lock.lockId).toBe(lockIds[0]);
+            expect(lock.id).toBe(lockIds[0]);
         });
 
         it("should POST a search for locks with the exact vendorField", async () => {
