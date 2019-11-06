@@ -171,7 +171,7 @@ export class HtlcRefundTransactionHandler extends TransactionHandler {
         lockWallet.balance = lockWallet.balance.minus(lockTransaction.amount).plus(transaction.data.fee);
         const lockedBalance: Utils.BigNumber = lockWallet.getAttribute("htlc.lockedBalance", Utils.BigNumber.ZERO);
         lockWallet.setAttribute("htlc.lockedBalance", lockedBalance.plus(lockTransaction.amount));
-        const locks: Interfaces.IHtlcLocks = lockWallet.getAttribute("htlc.locks");
+        const locks: Interfaces.IHtlcLocks = lockWallet.getAttribute("htlc.locks", {});
         locks[lockTransaction.id] = {
             amount: lockTransaction.amount,
             recipientId: lockTransaction.recipientId,
