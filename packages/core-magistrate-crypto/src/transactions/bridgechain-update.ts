@@ -1,4 +1,4 @@
-import { Transactions, Utils } from "@arkecosystem/crypto";
+import { Managers, Transactions, Utils } from "@arkecosystem/crypto";
 import ByteBuffer from "bytebuffer";
 import { MagistrateTransactionGroup, MagistrateTransactionStaticFees, MagistrateTransactionType } from "../enums";
 import { IBridgechainPorts, IBridgechainUpdateAsset } from "../interfaces";
@@ -102,11 +102,17 @@ export class BridgechainUpdateTransaction extends Transactions.Transaction {
             buffer.append(seedBuf);
         }
 
-        buffer.writeUint8(portsLength);
-        for (const [i, nameBuffer] of portNamesBuffers.entries()) {
-            buffer.writeUint8(nameBuffer.length);
-            buffer.append(nameBuffer);
-            buffer.writeUint16(portNumbers[i]);
+        const skipPortSerialization =
+            Managers.configManager.get("network.name") === "devnet" &&
+            !!Managers.configManager.getMilestone().skipBridgechainPortSerialization;
+
+        if (!skipPortSerialization) {
+            buffer.writeUint8(portsLength);
+            for (const [i, nameBuffer] of portNamesBuffers.entries()) {
+                buffer.writeUint8(nameBuffer.length);
+                buffer.append(nameBuffer);
+                buffer.writeUint16(portNumbers[i]);
+            }
         }
 
         return buffer;
@@ -134,18 +140,24 @@ export class BridgechainUpdateTransaction extends Transactions.Transaction {
             bridgechainUpdate.seedNodes = seedNodes;
         }
 
-        const portsLength: number = buf.readUint8();
-        if (portsLength) {
-            const ports: IBridgechainPorts = {};
+        const skipPortSerialization =
+            Managers.configManager.get("network.name") === "devnet" &&
+            !!Managers.configManager.getMilestone().skipBridgechainPortSerialization;
 
-            for (let i = 0; i < portsLength; i++) {
-                const nameLength: number = buf.readUint8();
-                const name: string = buf.readString(nameLength);
-                const port: number = buf.readUint16();
-                ports[name] = port;
+        if (!skipPortSerialization) {
+            const portsLength: number = buf.readUint8();
+            if (portsLength) {
+                const ports: IBridgechainPorts = {};
+
+                for (let i = 0; i < portsLength; i++) {
+                    const nameLength: number = buf.readUint8();
+                    const name: string = buf.readString(nameLength);
+                    const port: number = buf.readUint16();
+                    ports[name] = port;
+                }
+
+                bridgechainUpdate.ports = ports;
             }
-
-            bridgechainUpdate.ports = ports;
         }
 
         data.asset = {

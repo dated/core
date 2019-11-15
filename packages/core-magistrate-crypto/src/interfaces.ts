@@ -21,7 +21,7 @@ export interface IBridgechainRegistrationAsset {
     seedNodes: string[];
     genesisHash: string;
     bridgechainRepository: string;
-    ports: IBridgechainPorts;
+    ports?: IBridgechainPorts;
 }
 
 export interface IBridgechainUpdateAsset {

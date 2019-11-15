@@ -1,4 +1,4 @@
-import { Transactions, Utils } from "@arkecosystem/crypto";
+import { Managers, Transactions, Utils } from "@arkecosystem/crypto";
 import ByteBuffer from "bytebuffer";
 import { MagistrateTransactionGroup, MagistrateTransactionStaticFees, MagistrateTransactionType } from "../enums";
 import { IBridgechainPorts, IBridgechainRegistrationAsset } from "../interfaces";
@@ -77,7 +77,7 @@ export class BridgechainRegistrationTransaction extends Transactions.Transaction
         );
         const bridgechainRepositoryBufferLength: number = bridgechainRepositoryBuffer.length;
 
-        const ports: IBridgechainPorts = bridgechainRegistrationAsset.ports;
+        const ports: IBridgechainPorts = bridgechainRegistrationAsset.ports || {};
         const portsLength: number = Object.keys(ports).length;
 
         const portNamesBuffers: Buffer[] = [];
@@ -117,11 +117,17 @@ export class BridgechainRegistrationTransaction extends Transactions.Transaction
         buffer.writeUint8(bridgechainRepositoryBufferLength);
         buffer.append(bridgechainRepositoryBuffer);
 
-        buffer.writeUint8(portsLength);
-        for (const [i, nameBuffer] of portNamesBuffers.entries()) {
-            buffer.writeUint8(nameBuffer.length);
-            buffer.append(nameBuffer);
-            buffer.writeUint16(portNumbers[i]);
+        const skipPortSerialization =
+            Managers.configManager.get("network.name") === "devnet" &&
+            !!Managers.configManager.getMilestone().skipBridgechainPortSerialization;
+
+        if (!skipPortSerialization) {
+            buffer.writeUint8(portsLength);
+            for (const [i, nameBuffer] of portNamesBuffers.entries()) {
+                buffer.writeUint8(nameBuffer.length);
+                buffer.append(nameBuffer);
+                buffer.writeUint16(portNumbers[i]);
+            }
         }
 
         return buffer;
@@ -145,24 +151,33 @@ export class BridgechainRegistrationTransaction extends Transactions.Transaction
         const repositoryLength: number = buf.readUint8();
         const bridgechainRepository: string = buf.readString(repositoryLength);
 
-        const ports: IBridgechainPorts = {};
+        const bridgechainRegistration: IBridgechainRegistrationAsset = {
+            name,
+            seedNodes,
+            genesisHash,
+            bridgechainRepository,
+        };
 
-        const portsLength: number = buf.readUint8();
-        for (let i = 0; i < portsLength; i++) {
-            const nameLength: number = buf.readUint8();
-            const name: string = buf.readString(nameLength);
-            const port: number = buf.readUint16();
-            ports[name] = port;
+        const skipPortSerialization =
+            Managers.configManager.get("network.name") === "devnet" &&
+            !!Managers.configManager.getMilestone().skipBridgechainPortSerialization;
+
+        if (!skipPortSerialization) {
+            const ports: IBridgechainPorts = {};
+
+            const portsLength: number = buf.readUint8();
+            for (let i = 0; i < portsLength; i++) {
+                const nameLength: number = buf.readUint8();
+                const name: string = buf.readString(nameLength);
+                const port: number = buf.readUint16();
+                ports[name] = port;
+            }
+
+            bridgechainRegistration.ports = ports;
         }
 
         data.asset = {
-            bridgechainRegistration: {
-                name,
-                seedNodes,
-                genesisHash,
-                bridgechainRepository,
-                ports,
-            },
+            bridgechainRegistration,
         };
     }
 }
