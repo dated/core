@@ -64,6 +64,11 @@ export const schemas = {
         allOf: [{ format: "uri" }, { minLength: 4, maxLength: 80 }],
     },
 
+    remoteUri: {
+        $id: "remoteUri",
+        allOf: [{ format: "remoteUri" }, { minLength: 4, maxLength: 80 }],
+    },
+
     blockHeader: {
         $id: "blockHeader",
         type: "object",

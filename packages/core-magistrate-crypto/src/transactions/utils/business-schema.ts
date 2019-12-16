@@ -3,7 +3,7 @@ export const businessSchema = {
         $ref: "genericName",
     },
     website: {
-        $ref: "uri",
+        $ref: "remoteUri",
     },
     vat: {
         type: "string",
@@ -12,6 +12,6 @@ export const businessSchema = {
         $ref: "alphanumeric",
     },
     repository: {
-        $ref: "uri",
+        $ref: "remoteUri",
     },
 };

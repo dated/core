@@ -2,6 +2,8 @@ import { app } from "@arkecosystem/core-container";
 import { Utils } from "@arkecosystem/crypto";
 import { Ajv } from "ajv";
 import * as ipAddress from "ip";
+import { isUri } from "isuri";
+import { parse } from "url-parse";
 
 export const registerFormats = (ajv: Ajv) => {
     const config = app.getConfig();
@@ -61,6 +63,26 @@ export const registerFormats = (ajv: Ajv) => {
             } catch (e) {
                 return false;
             }
+        },
+    });
+
+    ajv.addFormat("remoteUri", {
+        type: "string",
+        validate: value => {
+            if (!isUri(value)) {
+                return false;
+            }
+
+            try {
+                const hostname = parse(value).hostname;
+                if (hostname === "localhost" || ipAddress.isV4Format(hostname) || ipAddress.isV6Format(hostname)) {
+                    return false;
+                }
+            } catch (e) {
+                return false;
+            }
+
+            return true;
         },
     });
 

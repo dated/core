@@ -37,7 +37,7 @@ export class BridgechainRegistrationTransaction extends Transactions.Transaction
                                     $ref: "transactionId",
                                 },
                                 bridgechainRepository: {
-                                    $ref: "uri",
+                                    $ref: "remoteUri",
                                 },
                                 ports: portsSchema,
                             },
