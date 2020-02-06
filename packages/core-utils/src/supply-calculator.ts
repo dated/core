@@ -1,6 +1,6 @@
 import { app } from "@arkecosystem/core-container";
-import { Blockchain } from "@arkecosystem/core-interfaces";
-import { Utils } from "@arkecosystem/crypto";
+import { Blockchain, Database } from "@arkecosystem/core-interfaces";
+import { Enums, Utils } from "@arkecosystem/crypto";
 
 export const calculate = (height: number): string => {
     const { genesisBlock, milestones } = app.getConfig().all();
@@ -10,11 +10,19 @@ export const calculate = (height: number): string => {
         height = blockchain ? blockchain.getLastBlock().data.height : 0;
     }
 
-    const totalAmount: Utils.BigNumber = Utils.BigNumber.make(genesisBlock.totalAmount);
-
     if (height === 0 || milestones.length === 0) {
-        return totalAmount.toFixed();
+        return genesisBlock.totalAmount;
     }
+
+    const databaseService: Database.IDatabaseService = app.resolvePlugin<Database.IDatabaseService>("database");
+
+    const balances: Utils.BigNumber = genesisBlock.transactions.reduce((acc, transaction) => {
+        if (transaction.type === Enums.TransactionType.Transfer) {
+            const balance = databaseService.walletManager.findByPublicKey(transaction.senderPublicKey).balance;
+            acc = acc.minus(balance);
+        }
+        return acc;
+    }, Utils.BigNumber.ZERO);
 
     let rewards: Utils.BigNumber = Utils.BigNumber.ZERO;
     let currentHeight: number = 0;
@@ -38,5 +46,5 @@ export const calculate = (height: number): string => {
         }
     }
 
-    return totalAmount.plus(rewards).toFixed();
+    return balances.plus(rewards).toFixed();
 };
