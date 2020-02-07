@@ -1,6 +1,6 @@
 import { app } from "@arkecosystem/core-container";
 import { Blockchain, Database } from "@arkecosystem/core-interfaces";
-import { Enums, Utils } from "@arkecosystem/crypto";
+import { Enums, Identities, Utils } from "@arkecosystem/crypto";
 
 export const calculate = (height: number): string => {
     const { genesisBlock, milestones } = app.getConfig().all();
@@ -16,11 +16,32 @@ export const calculate = (height: number): string => {
 
     const databaseService: Database.IDatabaseService = app.resolvePlugin<Database.IDatabaseService>("database");
 
-    const balances: Utils.BigNumber = genesisBlock.transactions.reduce((acc, transaction) => {
-        if (transaction.type === Enums.TransactionType.Transfer) {
-            const balance = databaseService.walletManager.findByPublicKey(transaction.senderPublicKey).balance;
-            acc = acc.minus(balance);
+    const balances: Utils.BigNumber = genesisBlock.transactions.reduce(async (acc, { amount, senderPublicKey, type }) => {
+        if (type === Enums.TransactionType.Transfer) {
+            acc = acc.plus(amount);
+
+            const address = Identities.Address.fromPublicKey(senderPublicKey);
+            let receivedByAddress = await databaseService.transactionsBusinessRepository.findAllByRecipient(address);
+
+            receivedByAddress = receivedByAddress.filter(transaction => transaction.block.height <= height);
+
+            for (const transaction of receivedByAddress) {
+                if (transaction.typeGroup === Enums.TransactionTypeGroup.Core) {
+                    switch (transaction.type) {
+                        case Enums.TransactionType.Transfer: {
+                            acc.minus(transaction.amount);
+                            break;
+                        }
+                        case Enums.TransactionType.MultiPayment: {
+                            const payments = transaction.asset.payments.filter(payment => payment.recipientId === address);
+                            acc = acc.minus(payments.reduce((sum, payment) => sum.plus(payment.amount), Utils.BigNumber.Zero));
+                            break;
+                        }
+                    }
+                }
+            }
         }
+
         return acc;
     }, Utils.BigNumber.ZERO);
 
